@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 
 	"github.com/chungjung-d/longteac/config"
-	ipchandler "github.com/chungjung-d/longteac/process/ipc-handler"
 )
 
 func StartContainerRootProcess(ctx context.Context) {
 	fmt.Printf("New namespace setup complete, running as PID %d\n", os.Getpid())
 
-	socketPath := ctx.Value(config.SocketPath).(string)
 	containerDirPath := ctx.Value(config.ContainerDirPath).(string)
 
 	err := os.Chdir(containerDirPath)
@@ -28,25 +27,44 @@ func StartContainerRootProcess(ctx context.Context) {
 		log.Fatal(err)
 	}
 
+	err = settingOverlayFsMount(containerDirPath)
+	if err != nil {
+		fmt.Println("Error setting overlay fs mount: ")
+		log.Fatal(err)
+	}
+
 	err = settingMount(containerDirPath, ociConfig)
 	if err != nil {
 		fmt.Println("Error setting mount: ")
 		log.Fatal(err)
 	}
 
-	listener, err := settingIPCSocket(socketPath)
+	err = settingPivotRoot(containerDirPath)
 	if err != nil {
-		fmt.Println("Error setting IPC socket: ")
+		fmt.Println("Error setting pivot root: ")
 		log.Fatal(err)
 	}
-	defer listener.Close()
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		go ipchandler.HandleConnection(conn)
+	// test_cmd := exec.Command("/bin/bash")
+	// test_cmd.Stdout = os.Stdout
+	// test_cmd.Stderr = os.Stderr
+	// test_cmd.Stdin = os.Stdin
+	// if err := test_cmd.Run(); err != nil {
+	// 	fmt.Printf("Error listing /bin directory - %s\n", err)
+	// 	os.Exit(1)
+	// }
+
+	cmd := exec.Command(ociConfig.ProcessConfig.Args[0], ociConfig.ProcessConfig.Args[1:]...)
+	cmd.Env = ociConfig.ProcessConfig.Env
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Start(); err != nil {
+		fmt.Printf("Error running the main process - %s\n", err)
+		os.Exit(1)
 	}
+	cmd.Wait()
+
+	fmt.Println("Container process exit")
+
 }

@@ -19,7 +19,8 @@ func Mount(mount config.MountsConfig) error {
 		prepareNonBindMount(mount)
 	}
 	mountFlag, mountOptions := getMountFlag(mount)
-	return syscall.Mount(mount.Source, "rootfs"+mount.Destination, mount.Type, mountFlag, strings.Join(mountOptions, ","))
+	//fmt.Println("Source:", mount.Source, "Destination:", mount.Destination, "Type:", mount.Type, "Flag:", mountFlag, "Options:", strings.Join(mountOptions, ","))
+	return syscall.Mount(mount.Source, "overlay/merge"+mount.Destination, mount.Type, mountFlag, strings.Join(mountOptions, ","))
 }
 
 func getMountFlag(mount config.MountsConfig) (uintptr, []string) {
@@ -98,18 +99,18 @@ func prepareBindMount(mount config.MountsConfig) {
 	sourceFile, _ := os.Stat(mount.Source)
 
 	if sourceFile.IsDir() {
-		os.MkdirAll("rootfs"+mount.Destination, os.ModePerm)
+		os.MkdirAll("overlay/merge"+mount.Destination, os.ModePerm)
 	} else {
 		filenameSplit := strings.Split(mount.Destination, "/")
 		filenameSplit = filenameSplit[:len(filenameSplit)-1]
-		os.MkdirAll("rootfs/"+strings.Join(filenameSplit, "/"), os.ModePerm)
-		os.Create("rootfs" + mount.Destination)
+		os.MkdirAll("overlay/merge/"+strings.Join(filenameSplit, "/"), os.ModePerm)
+		os.Create("overlay/merge" + mount.Destination)
 	}
 }
 
 func prepareNonBindMount(mount config.MountsConfig) {
 
-	if _, err := os.Stat("rootfs" + mount.Destination); os.IsNotExist(err) {
-		os.MkdirAll("rootfs"+mount.Destination, os.ModePerm)
+	if _, err := os.Stat("overlay/merge" + mount.Destination); os.IsNotExist(err) {
+		os.MkdirAll("overlay/merge"+mount.Destination, os.ModePerm)
 	}
 }

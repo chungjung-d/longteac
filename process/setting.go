@@ -1,9 +1,6 @@
 package process
 
 import (
-	"net"
-	"os"
-
 	"github.com/chungjung-d/longteac/config"
 	"github.com/chungjung-d/longteac/process/mounts"
 )
@@ -18,13 +15,10 @@ func settingMount(containerDirPath string, ociConfig *config.OCIConfig) error {
 	return nil
 }
 
-func settingIPCSocket(socketPath string) (net.Listener, error) {
-	os.Remove(socketPath)
+func settingOverlayFsMount(containerDirPath string) error {
+	return mounts.OverlayFsMount(containerDirPath)
+}
 
-	l, err := net.Listen("unix", socketPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return l, nil
+func settingPivotRoot(containerDirPath string) error {
+	return mounts.PivotRoot(containerDirPath)
 }

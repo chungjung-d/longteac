@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var socketPath string
 var containerDirPath string
 
 // createCmd represents the create command
@@ -24,19 +23,15 @@ var createCmd = &cobra.Command{
 
 		ctx := context.Background()
 
-		ctx = context.WithValue(ctx, config.SocketPath, socketPath)
 		ctx = context.WithValue(ctx, config.ContainerDirPath, containerDirPath)
 
 		process.StartContainerRootProcess(ctx)
 	},
 
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		if socketPath == "" {
-			return fmt.Errorf("The socket address (required)")
-		}
 
 		if containerDirPath == "" {
-			return fmt.Errorf("The container directory path - which extract oci spec (required)")
+			return fmt.Errorf("the container directory path - which extract oci spec (required)")
 		}
 
 		return nil
@@ -46,6 +41,5 @@ var createCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(createCmd)
 
-	createCmd.Flags().StringVarP(&socketPath, "socket", "s", "", "The socket address (required)")
 	createCmd.Flags().StringVarP(&containerDirPath, "container", "c", "", "The container directory path - which extract oci spec (required)")
 }
