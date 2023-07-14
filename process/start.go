@@ -63,8 +63,6 @@ func StartContainerRootProcess(ctx context.Context) {
 		fmt.Printf("Error running the main process - %s\n", err)
 		os.Exit(1)
 	}
-	cmd.Wait()
-
-	fmt.Println("Container process exit")
+	defer cmd.Wait()
 
 }

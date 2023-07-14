@@ -42,4 +42,5 @@ func init() {
 	rootCmd.AddCommand(createCmd)
 
 	createCmd.Flags().StringVarP(&containerDirPath, "container", "c", "", "The container directory path - which extract oci spec (required)")
+	
 }
